@@ -168,17 +168,22 @@ function runCurlsSequentually($curlHandlers) {
  */
 function runCurlsInParallel($curlHandlers) {
     $mh = curl_multi_init();
+    # we will be appending to this str
+    # when we execute the curls
     $data = '';
+    # add handlers
     foreach($curlHandlers as $ch) {
         curl_multi_add_handle($mh, $ch);
     }
     $active = null;
 
+    # kick curls off
     do {
         $mrc = curl_multi_exec($mh, $active);
     }
     while ($mrc === CURLM_CALL_MULTI_PERFORM);
 
+    # monitor the requests
     while ($active && $mrc === CURLM_OK) {
         if (curl_multi_select($mh) === -1) {
             usleep(1);
@@ -196,6 +201,8 @@ function runCurlsInParallel($curlHandlers) {
         $data .= curl_multi_getcontent($ch);
         curl_multi_remove_handle($mh, $ch);
     }
+    # close the connection
+    # and send the data
     curl_multi_close($mh);
     return $data;
 }
